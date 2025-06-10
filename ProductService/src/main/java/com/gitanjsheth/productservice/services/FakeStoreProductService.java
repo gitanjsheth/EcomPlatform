@@ -1,6 +1,7 @@
 package com.gitanjsheth.productservice.services;
 
 import com.gitanjsheth.productservice.dtos.FakeStoreProductDto;
+import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import com.gitanjsheth.productservice.models.Category;
 import com.gitanjsheth.productservice.models.Product;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,16 @@ public class FakeStoreProductService implements ProductServiceInterface{
     }
 
     @Override
-    public Product getSingleProduct(Long productId) {
+    public Product getSingleProduct(Long productId) throws ProductNotFoundException {
         ResponseEntity<FakeStoreProductDto> fakeStoreProductDtoResponse = restTemplate
                 .getForEntity("https://fakestoreapi.com/products/" + productId, FakeStoreProductDto.class);
 
         FakeStoreProductDto fakeStoreProductDto = fakeStoreProductDtoResponse.getBody();
+
+        if (fakeStoreProductDto == null) {
+            //Wrong product ID
+            throw new ProductNotFoundException(productId);
+        }
 
         return convertFakeStoreProductDtoToProduct(fakeStoreProductDto);
     }

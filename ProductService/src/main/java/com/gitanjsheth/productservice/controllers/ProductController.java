@@ -1,7 +1,10 @@
 package com.gitanjsheth.productservice.controllers;
 
+import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import com.gitanjsheth.productservice.models.Product;
 import com.gitanjsheth.productservice.services.ProductServiceInterface;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -19,8 +22,12 @@ public class ProductController {
 
     //localhost:8080/products/10
     @GetMapping("/{id}")
-    public Product getSingleProduct(@PathVariable("id") Long productId) {
-        return productService.getSingleProduct(productId);
+    public ResponseEntity<Product> getSingleProduct(@PathVariable("id") Long productId) throws ProductNotFoundException {
+        ResponseEntity<Product> response =
+                new ResponseEntity<>(
+                        productService.getSingleProduct(productId),
+                        HttpStatus.OK);
+        return response;
     }
 
     //localhost:8080/products/

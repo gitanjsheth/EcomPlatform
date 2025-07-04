@@ -2,6 +2,8 @@ package com.gitanjsheth.productservice.controllerAdvice;
 
 import com.gitanjsheth.productservice.dtos.ExceptionDto;
 import com.gitanjsheth.productservice.dtos.ProductNotFoundExceptionDto;
+import com.gitanjsheth.productservice.dtos.CategoryNotFoundExceptionDto;
+import com.gitanjsheth.productservice.exceptions.CategoryNotFoundException;
 import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +27,22 @@ public class ProductServiceExceptionHandler {
     public ResponseEntity<ProductNotFoundExceptionDto> handleProductNotFoundException(ProductNotFoundException exception) {
         ProductNotFoundExceptionDto prodNotFoundExpDto = new ProductNotFoundExceptionDto();
 
+        exception.printStackTrace();
         prodNotFoundExpDto.setProductId(exception.getProductId());
         prodNotFoundExpDto.setMessage("Product not found!");
         prodNotFoundExpDto.setResolution("Try again with correct product id");
 
         return new ResponseEntity<>(prodNotFoundExpDto, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<CategoryNotFoundExceptionDto> handleCategoryNotFoundException(CategoryNotFoundException exception) {
+        CategoryNotFoundExceptionDto categoryNotFoundExpDto = new CategoryNotFoundExceptionDto();
+
+        exception.printStackTrace();
+        categoryNotFoundExpDto.setMessage("Category not found!");
+        categoryNotFoundExpDto.setResolution("Try again with correct category id");
+
+        return new ResponseEntity<>(categoryNotFoundExpDto, HttpStatus.NOT_FOUND);
     }
 }

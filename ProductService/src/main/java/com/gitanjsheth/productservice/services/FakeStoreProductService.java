@@ -68,9 +68,10 @@ public class FakeStoreProductService implements ProductServiceInterface{
     }
 
     @Override
-    public Boolean deleteProduct(Long productId) {
-        return null;
-    }
+    public void deleteProduct(Long productId) {}
+
+    @Override
+    public void softDeleteById(Long productId) {}
 
     private static Product convertFakeStoreProductDtoToProduct(FakeStoreProductDto fakeStoreProductDto) {
         if (fakeStoreProductDto == null) {

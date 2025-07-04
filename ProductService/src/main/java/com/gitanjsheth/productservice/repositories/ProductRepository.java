@@ -2,6 +2,7 @@ package com.gitanjsheth.productservice.repositories;
 
 import com.gitanjsheth.productservice.models.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import com.gitanjsheth.productservice.models.Product;
 
@@ -21,4 +22,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategory(Category category);
 
     List<Product> findByCategory_Title(String categoryTitle);
+
+    Product save(Product product);
+
+    void deleteById(Long productId);
+
+    void softDeleteById(Long productId);
+
+    @Query("select p from Product p where p.id = 1")
+    Product findProductWithGivenId(Long productId);
+
 }

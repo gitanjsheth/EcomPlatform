@@ -1,5 +1,6 @@
 package com.gitanjsheth.productservice.controllers;
 
+import com.gitanjsheth.productservice.exceptions.CategoryNotFoundException;
 import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import com.gitanjsheth.productservice.models.Product;
 import com.gitanjsheth.productservice.services.ProductServiceInterface;
@@ -49,8 +50,8 @@ public class ProductController {
 
     //localhost:8080/products/
     @PostMapping("/")
-    public Product createProduct(@RequestBody Product product) {
-        return new Product();
+    public Product createProduct(@RequestBody Product product) throws CategoryNotFoundException {
+        return productService.createProduct(product);
     }
 
     //localhost:8080/products/

@@ -9,4 +9,9 @@ public class ProductNotFoundException extends Exception {
     public ProductNotFoundException(long productId) {
         this.productId = productId;
     }
+
+    public ProductNotFoundException(long productId, String message) {
+        super(message);
+        this.productId = productId;
+    }
 }

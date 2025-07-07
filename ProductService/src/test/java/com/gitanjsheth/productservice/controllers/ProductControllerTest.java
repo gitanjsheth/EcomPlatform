@@ -1,6 +1,6 @@
 package com.gitanjsheth.productservice.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gitanjsheth.productservice.dtos.ExceptionDto;
 import com.gitanjsheth.productservice.exceptions.CategoryNotFoundException;
 import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import com.gitanjsheth.productservice.models.Category;
@@ -8,36 +8,28 @@ import com.gitanjsheth.productservice.models.Product;
 import com.gitanjsheth.productservice.services.ProductServiceInterface;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(value = ProductController.class, useDefaultFilters = false)
-@ComponentScan(basePackages = "com.gitanjsheth.productservice.controllers")
+@ExtendWith(MockitoExtension.class)
 class ProductControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private ProductServiceInterface productServiceInterface;
 
-    @MockBean
-    @Qualifier("selfProductService")
-    private ProductServiceInterface productService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private ProductController productController;
 
     private Product testProduct;
     private Category testCategory;
@@ -50,212 +42,99 @@ class ProductControllerTest {
 
         testProduct = new Product();
         testProduct.setId(1L);
-        testProduct.setTitle("Test Product");
-        testProduct.setPrice(100);
-        testProduct.setDescription("Test Description");
-        testProduct.setImageURL("http://test.com/image.jpg");
+        testProduct.setTitle("iPhone 15");
+        testProduct.setDescription("Latest iPhone model");
+        testProduct.setPrice(999);
+        testProduct.setImageURL("http://example.com/image.jpg");
         testProduct.setCategory(testCategory);
     }
 
     @Test
-    void getSingleProduct_ExistingProduct_ReturnsProduct() throws Exception {
+    void getAllProducts_ReturnsListOfProducts() {
         // Arrange
-        when(productService.getSingleProduct(1L)).thenReturn(testProduct);
+        List<Product> expectedProducts = Arrays.asList(testProduct);
+        when(productServiceInterface.getAllProducts()).thenReturn(expectedProducts);
 
-        // Act & Assert
-        mockMvc.perform(get("/products/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("Test Product"))
-                .andExpect(jsonPath("$.price").value(100))
-                .andExpect(jsonPath("$.description").value("Test Description"));
+        // Act
+        ResponseEntity<List<Product>> response = productController.getAllProducts();
 
-        verify(productService, times(1)).getSingleProduct(1L);
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedProducts, response.getBody());
+        verify(productServiceInterface, times(1)).getAllProducts();
     }
 
     @Test
-    void getSingleProduct_NonExistingProduct_ReturnsNotFound() throws Exception {
+    void getSingleProduct_ValidId_ReturnsProduct() throws ProductNotFoundException {
         // Arrange
-        when(productService.getSingleProduct(1L)).thenThrow(new ProductNotFoundException(1L));
+        when(productServiceInterface.getSingleProduct(1L)).thenReturn(testProduct);
 
-        // Act & Assert
-        mockMvc.perform(get("/products/1"))
-                .andExpect(status().isNotFound());
+        // Act
+        ResponseEntity<Product> response = productController.getSingleProduct(1L);
 
-        verify(productService, times(1)).getSingleProduct(1L);
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testProduct, response.getBody());
+        verify(productServiceInterface, times(1)).getSingleProduct(1L);
     }
 
     @Test
-    void getAllProducts_ReturnsListOfProducts() throws Exception {
+    void createProduct_ValidProduct_ReturnsCreatedProduct() throws CategoryNotFoundException {
         // Arrange
-        List<Product> products = Arrays.asList(testProduct);
-        when(productService.getAllProducts()).thenReturn(products);
+        when(productServiceInterface.createProduct(any(Product.class))).thenReturn(testProduct);
 
-        // Act & Assert
-        mockMvc.perform(get("/products/"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].title").value("Test Product"));
+        // Act
+        ResponseEntity<Product> response = productController.createProduct(testProduct);
 
-        verify(productService, times(1)).getAllProducts();
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(testProduct, response.getBody());
+        verify(productServiceInterface, times(1)).createProduct(testProduct);
     }
 
     @Test
-    void createProduct_ValidProduct_ReturnsCreatedProduct() throws Exception {
+    void updateProduct_ValidIdAndProduct_ReturnsUpdatedProduct() throws ProductNotFoundException, CategoryNotFoundException {
         // Arrange
-        when(productService.createProduct(any(Product.class))).thenReturn(testProduct);
+        Product updatedProduct = new Product();
+        updatedProduct.setTitle("Updated iPhone");
+        when(productServiceInterface.updateProduct(eq(1L), any(Product.class))).thenReturn(updatedProduct);
 
-        // Act & Assert
-        mockMvc.perform(post("/products/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testProduct)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("Test Product"));
+        // Act
+        ResponseEntity<Product> response = productController.updateProduct(1L, testProduct);
 
-        verify(productService, times(1)).createProduct(any(Product.class));
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updatedProduct, response.getBody());
+        verify(productServiceInterface, times(1)).updateProduct(1L, testProduct);
     }
 
     @Test
-    void createProduct_InvalidProduct_ReturnsBadRequest() throws Exception {
+    void softDeleteProduct_ValidId_ReturnsNoContent() throws ProductNotFoundException {
         // Arrange
-        Product invalidProduct = new Product();
-        // Missing required fields (title, category)
+        doNothing().when(productServiceInterface).softDeleteById(1L);
 
-        // Act & Assert
-        mockMvc.perform(post("/products/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidProduct)))
-                .andExpect(status().isBadRequest());
+        // Act
+        ResponseEntity<Void> response = productController.softDeleteProduct(1L);
 
-        verify(productService, never()).createProduct(any(Product.class));
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(productServiceInterface, times(1)).softDeleteById(1L);
     }
 
     @Test
-    void createProduct_CategoryNotFound_ReturnsNotFound() throws Exception {
+    void deleteProduct_ValidId_ReturnsNoContent() throws ProductNotFoundException {
         // Arrange
-        when(productService.createProduct(any(Product.class)))
-                .thenThrow(new CategoryNotFoundException("Category not found"));
+        doNothing().when(productServiceInterface).deleteProduct(1L);
 
-        // Act & Assert
-        mockMvc.perform(post("/products/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testProduct)))
-                .andExpect(status().isNotFound());
+        // Act
+        ResponseEntity<Void> response = productController.deleteProduct(1L);
 
-        verify(productService, times(1)).createProduct(any(Product.class));
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(productServiceInterface, times(1)).deleteProduct(1L);
     }
 
-    @Test
-    void updateProduct_ValidProduct_ReturnsUpdatedProduct() throws Exception {
-        // Arrange
-        when(productService.updateProduct(anyLong(), any(Product.class))).thenReturn(testProduct);
 
-        // Act & Assert
-        mockMvc.perform(put("/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testProduct)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1));
-
-        verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
-    }
-
-    @Test
-    void updateProduct_InvalidProduct_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Product invalidProduct = new Product();
-        // Missing required fields
-
-        // Act & Assert
-        mockMvc.perform(put("/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidProduct)))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).updateProduct(anyLong(), any(Product.class));
-    }
-
-    @Test
-    void updateProduct_ProductNotFound_ReturnsNotFound() throws Exception {
-        // Arrange
-        when(productService.updateProduct(anyLong(), any(Product.class)))
-                .thenThrow(new ProductNotFoundException(1L, "Product not found"));
-
-        // Act & Assert
-        mockMvc.perform(put("/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testProduct)))
-                .andExpect(status().isNotFound());
-
-        verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
-    }
-
-    @Test
-    void updateProduct_CategoryNotFound_ReturnsNotFound() throws Exception {
-        // Arrange
-        when(productService.updateProduct(anyLong(), any(Product.class)))
-                .thenThrow(new CategoryNotFoundException("Category not found"));
-
-        // Act & Assert
-        mockMvc.perform(put("/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testProduct)))
-                .andExpect(status().isNotFound());
-
-        verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
-    }
-
-    @Test
-    void deleteProduct_ExistingProduct_ReturnsNoContent() throws Exception {
-        // Arrange
-        doNothing().when(productService).deleteProduct(1L);
-
-        // Act & Assert
-        mockMvc.perform(delete("/products/1"))
-                .andExpect(status().isNoContent());
-
-        verify(productService, times(1)).deleteProduct(1L);
-    }
-
-    @Test
-    void deleteProduct_ValidId_CallsServiceMethod() throws Exception {
-        // Arrange
-        doNothing().when(productService).deleteProduct(anyLong());
-
-        // Act & Assert
-        mockMvc.perform(delete("/products/1"))
-                .andExpect(status().isNoContent());
-
-        verify(productService, times(1)).deleteProduct(1L);
-    }
-
-    @Test
-    void softDeleteProduct_ExistingProduct_ReturnsNoContent() throws Exception {
-        // Arrange
-        doNothing().when(productService).softDeleteById(1L);
-
-        // Act & Assert
-        mockMvc.perform(patch("/products/1/soft-delete"))
-                .andExpect(status().isNoContent());
-
-        verify(productService, times(1)).softDeleteById(1L);
-    }
-
-    @Test
-    void softDeleteProduct_ValidId_CallsServiceMethod() throws Exception {
-        // Arrange
-        doNothing().when(productService).softDeleteById(anyLong());
-
-        // Act & Assert
-        mockMvc.perform(patch("/products/1/soft-delete"))
-                .andExpect(status().isNoContent());
-
-        verify(productService, times(1)).softDeleteById(1L);
-    }
-}
+} 

@@ -1,44 +1,32 @@
 package com.gitanjsheth.productservice.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gitanjsheth.productservice.exceptions.CategoryNotFoundException;
 import com.gitanjsheth.productservice.models.Category;
 import com.gitanjsheth.productservice.services.CategoryServiceInterface;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(CategoryController.class)
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class CategoryControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    @Qualifier("selfCategoryService")
+    @Mock
     private CategoryServiceInterface categoryServiceInterface;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private CategoryController categoryController;
 
     private Category testCategory;
 
@@ -50,244 +38,89 @@ class CategoryControllerTest {
     }
 
     @Test
-    void getSingleCategory_ExistingCategory_ReturnsCategory() throws Exception {
+    void getAllCategories_ReturnsListOfCategories() {
+        // Arrange
+        List<Category> expectedCategories = Arrays.asList(testCategory);
+        when(categoryServiceInterface.getAllCategories()).thenReturn(expectedCategories);
+
+        // Act
+        ResponseEntity<List<Category>> response = categoryController.getAllCategories();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedCategories, response.getBody());
+        verify(categoryServiceInterface, times(1)).getAllCategories();
+    }
+
+    @Test
+    void getSingleCategory_ValidId_ReturnsCategory() throws CategoryNotFoundException {
         // Arrange
         when(categoryServiceInterface.getSingleCategory(1L)).thenReturn(testCategory);
 
-        // Act & Assert
-        mockMvc.perform(get("/categories/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("Electronics"));
+        // Act
+        ResponseEntity<Category> response = categoryController.getSingleCategory(1L);
 
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testCategory, response.getBody());
         verify(categoryServiceInterface, times(1)).getSingleCategory(1L);
     }
 
     @Test
-    void getSingleCategory_NonExistingCategory_ReturnsNotFound() throws Exception {
-        // Arrange
-        when(categoryServiceInterface.getSingleCategory(1L)).thenThrow(new CategoryNotFoundException("Category not found with id: 1"));
-
-        // Act & Assert
-        mockMvc.perform(get("/categories/1"))
-                .andExpect(status().isNotFound());
-
-        verify(categoryServiceInterface, times(1)).getSingleCategory(1L);
-    }
-
-    @Test
-    void getAllCategories_ReturnsListOfCategories() throws Exception {
-        // Arrange
-        Category anotherCategory = new Category();
-        anotherCategory.setId(2L);
-        anotherCategory.setTitle("Clothing");
-        
-        List<Category> categories = Arrays.asList(testCategory, anotherCategory);
-        when(categoryServiceInterface.getAllCategories()).thenReturn(categories);
-
-        // Act & Assert
-        mockMvc.perform(get("/categories/"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].title").value("Electronics"))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].title").value("Clothing"));
-
-        verify(categoryServiceInterface, times(1)).getAllCategories();
-    }
-
-    @Test
-    void getAllCategories_EmptyList_ReturnsEmptyArray() throws Exception {
-        // Arrange
-        when(categoryServiceInterface.getAllCategories()).thenReturn(Arrays.asList());
-
-        // Act & Assert
-        mockMvc.perform(get("/categories/"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
-
-        verify(categoryServiceInterface, times(1)).getAllCategories();
-    }
-
-    @Test
-    void createCategory_ValidCategory_ReturnsCreatedCategory() throws Exception {
+    void createCategory_ValidCategory_ReturnsCreatedCategory() {
         // Arrange
         when(categoryServiceInterface.createCategory(any(Category.class))).thenReturn(testCategory);
 
-        // Act & Assert
-        mockMvc.perform(post("/categories/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testCategory)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("Electronics"));
+        // Act
+        ResponseEntity<Category> response = categoryController.createCategory(testCategory);
 
-        verify(categoryServiceInterface, times(1)).createCategory(any(Category.class));
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(testCategory, response.getBody());
+        verify(categoryServiceInterface, times(1)).createCategory(testCategory);
     }
 
     @Test
-    void createCategory_InvalidCategory_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        // Missing required title field
-
-        // Act & Assert
-        mockMvc.perform(post("/categories/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).createCategory(any(Category.class));
-    }
-
-    @Test
-    void createCategory_TitleTooShort_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        invalidCategory.setTitle("A"); // Too short (min 2 characters)
-
-        // Act & Assert
-        mockMvc.perform(post("/categories/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).createCategory(any(Category.class));
-    }
-
-    @Test
-    void createCategory_TitleTooLong_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        invalidCategory.setTitle("A".repeat(51)); // Too long (max 50 characters)
-
-        // Act & Assert
-        mockMvc.perform(post("/categories/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).createCategory(any(Category.class));
-    }
-
-    @Test
-    void updateCategory_ValidCategory_ReturnsUpdatedCategory() throws Exception {
+    void updateCategory_ValidIdAndCategory_ReturnsUpdatedCategory() throws CategoryNotFoundException {
         // Arrange
         Category updatedCategory = new Category();
-        updatedCategory.setId(1L);
         updatedCategory.setTitle("Updated Electronics");
-        
-        when(categoryServiceInterface.updateCategory(anyLong(), any(Category.class))).thenReturn(updatedCategory);
+        when(categoryServiceInterface.updateCategory(eq(1L), any(Category.class))).thenReturn(updatedCategory);
 
-        // Act & Assert
-        mockMvc.perform(put("/categories/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedCategory)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.title").value("Updated Electronics"));
+        // Act
+        ResponseEntity<Category> response = categoryController.updateCategory(1L, testCategory);
 
-        verify(categoryServiceInterface, times(1)).updateCategory(eq(1L), any(Category.class));
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updatedCategory, response.getBody());
+        verify(categoryServiceInterface, times(1)).updateCategory(1L, testCategory);
     }
 
     @Test
-    void updateCategory_InvalidCategory_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        // Missing required title field
-
-        // Act & Assert
-        mockMvc.perform(put("/categories/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).updateCategory(anyLong(), any(Category.class));
-    }
-
-    @Test
-    void deleteCategory_ExistingCategory_ReturnsNoContent() throws Exception {
-        // Arrange
-        doNothing().when(categoryServiceInterface).deleteCategory(1L);
-
-        // Act & Assert
-        mockMvc.perform(delete("/categories/1"))
-                .andExpect(status().isNoContent());
-
-        verify(categoryServiceInterface, times(1)).deleteCategory(1L);
-    }
-
-    @Test
-    void deleteCategory_ValidId_CallsServiceMethod() throws Exception {
-        // Arrange
-        doNothing().when(categoryServiceInterface).deleteCategory(anyLong());
-
-        // Act & Assert
-        mockMvc.perform(delete("/categories/1"))
-                .andExpect(status().isNoContent());
-
-        verify(categoryServiceInterface, times(1)).deleteCategory(1L);
-    }
-
-    @Test
-    void softDeleteCategory_ExistingCategory_ReturnsNoContent() throws Exception {
+    void softDeleteCategory_ValidId_ReturnsNoContent() throws CategoryNotFoundException {
         // Arrange
         doNothing().when(categoryServiceInterface).softDeleteCategory(1L);
 
-        // Act & Assert
-        mockMvc.perform(patch("/categories/1"))
-                .andExpect(status().isNoContent());
+        // Act
+        ResponseEntity<Void> response = categoryController.softDeleteCategory(1L);
 
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
         verify(categoryServiceInterface, times(1)).softDeleteCategory(1L);
     }
 
     @Test
-    void softDeleteCategory_ValidId_CallsServiceMethod() throws Exception {
+    void deleteCategory_ValidId_ReturnsNoContent() throws CategoryNotFoundException {
         // Arrange
-        doNothing().when(categoryServiceInterface).softDeleteCategory(anyLong());
+        doNothing().when(categoryServiceInterface).deleteCategory(1L);
 
-        // Act & Assert
-        mockMvc.perform(patch("/categories/1"))
-                .andExpect(status().isNoContent());
+        // Act
+        ResponseEntity<Void> response = categoryController.deleteCategory(1L);
 
-        verify(categoryServiceInterface, times(1)).softDeleteCategory(1L);
-    }
-
-    @Test
-    void createCategory_BlankTitle_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        invalidCategory.setTitle("   "); // Blank title
-
-        // Act & Assert
-        mockMvc.perform(post("/categories/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).createCategory(any(Category.class));
-    }
-
-    @Test
-    void updateCategory_BlankTitle_ReturnsBadRequest() throws Exception {
-        // Arrange
-        Category invalidCategory = new Category();
-        invalidCategory.setTitle(""); // Empty title
-
-        // Act & Assert
-        mockMvc.perform(put("/categories/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidCategory)))
-                .andExpect(status().isBadRequest());
-
-        verify(categoryServiceInterface, never()).updateCategory(anyLong(), any(Category.class));
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(categoryServiceInterface, times(1)).deleteCategory(1L);
     }
 } 

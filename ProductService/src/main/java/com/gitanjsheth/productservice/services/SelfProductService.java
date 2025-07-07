@@ -24,7 +24,7 @@ public class SelfProductService implements ProductServiceInterface{
 
     @Override
     public Product getSingleProduct(Long productId) throws ProductNotFoundException {
-        return productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId));
+        return productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId, "Product not found with id: " + productId));
     }
 
     @Override
@@ -51,13 +51,39 @@ public class SelfProductService implements ProductServiceInterface{
     }
 
     @Override
-    public Product updateProduct(Long productId, Product product) {
-        return null;
-    }
+    public Product updateProduct(Long productId, Product product) throws ProductNotFoundException, CategoryNotFoundException {
+        // PUT operation - but handle partial input gracefully
+        // Load existing product first
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId, "Product not found with id: " + productId));
 
-    @Override
-    public Product changeProduct(Long productId, Product product) {
-        return null;
+        // Handle category if provided
+        if (product.getCategory() != null) {
+            Category category = product.getCategory();
+            Optional<Category> optionalCategory = categoryRepository.findByTitle(category.getTitle());
+            if (optionalCategory.isEmpty()) {
+                category = categoryRepository.save(category);
+            } else {
+                category = optionalCategory.get();
+            }
+            existingProduct.setCategory(category);
+        }
+
+        // Update only provided fields (graceful handling)
+        if (product.getTitle() != null && !product.getTitle().trim().isEmpty()) {
+            existingProduct.setTitle(product.getTitle());
+        }
+        if (product.getDescription() != null) {
+            existingProduct.setDescription(product.getDescription());
+        }
+        if (product.getPrice() != null) {
+            existingProduct.setPrice(product.getPrice());
+        }
+        if (product.getImageURL() != null) {
+            existingProduct.setImageURL(product.getImageURL());
+        }
+
+        return productRepository.save(existingProduct);
     }
 
     @Override

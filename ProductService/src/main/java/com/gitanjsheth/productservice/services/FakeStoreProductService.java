@@ -1,6 +1,7 @@
 package com.gitanjsheth.productservice.services;
 
 import com.gitanjsheth.productservice.dtos.FakeStoreProductDto;
+import com.gitanjsheth.productservice.exceptions.CategoryNotFoundException;
 import com.gitanjsheth.productservice.exceptions.ProductNotFoundException;
 import com.gitanjsheth.productservice.models.Category;
 import com.gitanjsheth.productservice.models.Product;
@@ -53,17 +54,12 @@ public class FakeStoreProductService implements ProductServiceInterface{
     }
 
     @Override
-    public Product createProduct(Product product) {
+    public Product createProduct(Product product) throws CategoryNotFoundException {
         return null;
     }
 
     @Override
-    public Product updateProduct(Long productId, Product product) {
-        return null;
-    }
-
-    @Override
-    public Product changeProduct(Long productId, Product product) {
+    public Product updateProduct(Long productId, Product product) throws ProductNotFoundException, CategoryNotFoundException {
         return null;
     }
 

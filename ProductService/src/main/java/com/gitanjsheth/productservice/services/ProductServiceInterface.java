@@ -10,8 +10,7 @@ public interface ProductServiceInterface {
     Product getSingleProduct(Long productId) throws ProductNotFoundException;
     List<Product> getAllProducts();
     Product createProduct(Product product) throws CategoryNotFoundException;
-    Product updateProduct(Long productId, Product product);
-    Product changeProduct(Long productId, Product product);
+    Product updateProduct(Long productId, Product product) throws ProductNotFoundException, CategoryNotFoundException;
     void deleteProduct(Long productId);
     void softDeleteById(Long productId);
 }

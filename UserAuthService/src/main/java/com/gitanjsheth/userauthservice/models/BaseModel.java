@@ -1,9 +1,6 @@
 package com.gitanjsheth.userauthservice.models;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +15,10 @@ public abstract class BaseModel {
     private Long id;
     private Date createdAt;
     private Date updatedAt;
+    
+    @Enumerated(EnumType.STRING)
     private Status status;
+    
     private String createdBy;
     private String updatedBy;
 }

@@ -15,12 +15,7 @@ public class DtoUtils {
         userDto.setId(user.getId());
         userDto.setUsername(user.getUsername());
         userDto.setEmail(user.getEmail());
-        userDto.setPhoneNumber(user.getPhoneNumber());
-        userDto.setStatus(user.getStatus());
         userDto.setCreatedAt(user.getCreatedAt());
-        userDto.setUpdatedAt(user.getUpdatedAt());
-        userDto.setCreatedBy(user.getCreatedBy());
-        userDto.setUpdatedBy(user.getUpdatedBy());
         
         if (user.getRoles() != null) {
             List<RoleDto> roleDtos = user.getRoles().stream()

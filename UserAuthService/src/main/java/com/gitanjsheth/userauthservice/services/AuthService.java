@@ -5,9 +5,9 @@ import com.gitanjsheth.userauthservice.dtos.SignUpDto;
 import com.gitanjsheth.userauthservice.dtos.UserDto;
 import com.gitanjsheth.userauthservice.models.User;
 
-public interface UserService {
-    UserDto signUp(SignUpDto signUpDto) throws Exception;
-    UserDto login(LoginDto loginDto) throws Exception;
+public interface AuthService {
+    UserDto signUp(SignUpDto signUpDto);
+    UserDto login(LoginDto loginDto);
     User findByEmail(String email);
     User findByUsername(String username);
     User findByPhoneNumber(String phoneNumber);

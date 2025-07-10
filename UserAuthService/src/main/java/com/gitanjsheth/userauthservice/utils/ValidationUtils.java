@@ -27,9 +27,4 @@ public class ValidationUtils {
         }
         return null;
     }
-    
-    public static ResponseEntity<ErrorResponseDto> createErrorResponse(String message) {
-        ErrorResponseDto errorResponse = new ErrorResponseDto(message, false);
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
 } 

@@ -23,10 +23,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll() // For H2 database console if needed
                 .anyRequest().authenticated()
             )
-            .headers(headers -> headers.frameOptions().disable()); // For H2 console
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.disable()) // Updated API
+            );
 
         return http.build();
     }

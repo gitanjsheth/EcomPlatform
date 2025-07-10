@@ -3,69 +3,73 @@ package com.gitanjsheth.userauthservice.services;
 import com.gitanjsheth.userauthservice.dtos.LoginDto;
 import com.gitanjsheth.userauthservice.dtos.SignUpDto;
 import com.gitanjsheth.userauthservice.dtos.UserDto;
+import com.gitanjsheth.userauthservice.exceptions.InvalidCredentialsException;
+import com.gitanjsheth.userauthservice.exceptions.UserAlreadyExistsException;
 import com.gitanjsheth.userauthservice.models.Role;
 import com.gitanjsheth.userauthservice.models.Status;
 import com.gitanjsheth.userauthservice.models.User;
 import com.gitanjsheth.userauthservice.repositories.RoleRepository;
 import com.gitanjsheth.userauthservice.repositories.UserRepository;
 import com.gitanjsheth.userauthservice.utils.DtoUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private RoleRepository roleRepository;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public AuthServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
-    public UserDto signUp(SignUpDto signUpDto) throws Exception {
+    @Transactional
+    public UserDto signUp(SignUpDto signUpDto) {
         // Check if user already exists
         if (existsByEmail(signUpDto.getEmail())) {
-            throw new Exception("User with email " + signUpDto.getEmail() + " already exists");
+            throw new UserAlreadyExistsException("User with email " + signUpDto.getEmail() + " already exists");
         }
         
         if (existsByUsername(signUpDto.getUsername())) {
-            throw new Exception("User with username " + signUpDto.getUsername() + " already exists");
+            throw new UserAlreadyExistsException("User with username " + signUpDto.getUsername() + " already exists");
         }
         
         if (signUpDto.getPhoneNumber() != null && !signUpDto.getPhoneNumber().trim().isEmpty() 
             && existsByPhoneNumber(signUpDto.getPhoneNumber())) {
-            throw new Exception("User with phone number " + signUpDto.getPhoneNumber() + " already exists");
+            throw new UserAlreadyExistsException("User with phone number " + signUpDto.getPhoneNumber() + " already exists");
         }
         
         // Create new user
         User user = createUserFromSignUpDto(signUpDto);
-        user.setRoles(Arrays.asList(getOrCreateDefaultRole()));
+        user.setRoles(Collections.singletonList(getOrCreateDefaultRole()));
         
         User savedUser = userRepository.save(user);
         return DtoUtils.convertToUserDto(savedUser);
     }
 
     @Override
-    public UserDto login(LoginDto loginDto) throws Exception {
+    public UserDto login(LoginDto loginDto) {
         User user = findUserByIdentifier(loginDto.getIdentifier());
         
         if (user == null) {
-            throw new Exception("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
         
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-            throw new Exception("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
         
         if (user.getStatus() != Status.ACTIVE) {
-            throw new Exception("User account is not active");
+            throw new InvalidCredentialsException("User account is not active");
         }
         
         return DtoUtils.convertToUserDto(user);
@@ -114,7 +118,7 @@ public class UserServiceImpl implements UserService {
         // updatedBy should be null for new records
         return user;
     }
-    
+
     private Role getOrCreateDefaultRole() {
         return roleRepository.findByRoleName("USER")
                 .orElseGet(() -> {

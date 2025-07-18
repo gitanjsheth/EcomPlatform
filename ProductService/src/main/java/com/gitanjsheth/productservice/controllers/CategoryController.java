@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/categories")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080", "http://localhost:8081"}) // Restrict to specific origins
 public class CategoryController {
 
     private final CategoryServiceInterface categoryServiceInterface;
@@ -51,14 +52,14 @@ public class CategoryController {
 
     //localhost:8081/categories/10
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long categoryId) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long categoryId) throws CategoryNotFoundException {
         categoryServiceInterface.deleteCategory(categoryId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     //localhost:8081/categories/10 (Soft delete - marks as deleted but keeps in database)
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> softDeleteCategory(@PathVariable("id") Long categoryId) {
+    public ResponseEntity<Void> softDeleteCategory(@PathVariable("id") Long categoryId) throws CategoryNotFoundException {
         categoryServiceInterface.softDeleteCategory(categoryId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

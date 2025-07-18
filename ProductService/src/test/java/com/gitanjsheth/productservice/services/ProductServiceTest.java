@@ -127,7 +127,7 @@ class ProductServiceTest {
         assertNotNull(result);
         assertEquals(testProduct.getId(), result.getId());
         verify(categoryRepository, times(1)).findByTitle("Electronics");
-        verify(categoryRepository, times(1)).save(testCategory);
+        verify(categoryRepository, times(1)).save(any(Category.class)); // Changed to any(Category.class) since a new instance is created
         verify(productRepository, times(1)).save(testProduct);
     }
 
@@ -177,21 +177,29 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_CallsRepository() {
+    void deleteProduct_CallsHardDeleteRepository() throws ProductNotFoundException {
+        // Arrange
+        when(productRepository.existsById(1L)).thenReturn(true);
+        
         // Act
         productService.deleteProduct(1L);
 
         // Assert
-        verify(productRepository, times(1)).deleteById(1L);
+        verify(productRepository, times(1)).existsById(1L);
+        verify(productRepository, times(1)).hardDeleteById(1L);
     }
 
     @Test
-    void softDeleteById_CallsRepository() {
+    void softDeleteById_CallsRegularDeleteRepository() throws ProductNotFoundException {
+        // Arrange
+        when(productRepository.existsById(1L)).thenReturn(true);
+        
         // Act
         productService.softDeleteById(1L);
 
         // Assert
-        verify(productRepository, times(1)).softDeleteById(1L);
+        verify(productRepository, times(1)).existsById(1L);
+        verify(productRepository, times(1)).deleteById(1L); // Now uses regular deleteById for soft delete
     }
 
     @Test

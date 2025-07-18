@@ -97,8 +97,8 @@ public class CategoryRepositoryTest {
         category.setTitle("Sports");
         Category savedCategory = categoryRepository.save(category);
 
-        // Soft delete the category
-        categoryRepository.softDeleteById(savedCategory.getId());
+        // Soft delete the category using @SQLDelete annotation
+        categoryRepository.deleteById(savedCategory.getId());
 
         // Act
         Optional<Category> foundCategory = categoryRepository.findByTitle("Sports");
@@ -108,14 +108,14 @@ public class CategoryRepositoryTest {
     }
 
     @Test
-    public void softDeleteById_ExistingCategory_MarksAsDeleted() {
+    public void deleteById_WithSQLDeleteAnnotation_MarksAsDeleted() {
         // Arrange
         Category category = new Category();
         category.setTitle("Home & Garden");
         Category savedCategory = categoryRepository.save(category);
 
-        // Act
-        categoryRepository.softDeleteById(savedCategory.getId());
+        // Act - deleteById now triggers soft delete via @SQLDelete annotation
+        categoryRepository.deleteById(savedCategory.getId());
         testEntityManager.flush(); // Force database synchronization
         testEntityManager.clear(); // Clear the persistence context to force a fresh read
 
@@ -126,15 +126,17 @@ public class CategoryRepositoryTest {
     }
 
     @Test
-    public void deleteById_ExistingCategory_RemovesFromDatabase() {
+    public void hardDeleteById_ExistingCategory_RemovesFromDatabase() {
         // Arrange
         Category category = new Category();
         category.setTitle("Automotive");
         Category savedCategory = categoryRepository.save(category);
         Long categoryId = savedCategory.getId();
 
-        // Act
-        categoryRepository.deleteById(categoryId);
+        // Act - Use hard delete to actually remove from database
+        categoryRepository.hardDeleteById(categoryId);
+        testEntityManager.flush(); // Force database synchronization
+        testEntityManager.clear(); // Clear the persistence context to force a fresh read
 
         // Assert
         Optional<Category> foundCategory = categoryRepository.findById(categoryId);
@@ -152,8 +154,8 @@ public class CategoryRepositoryTest {
         category2.setTitle("Food");
         categoryRepository.save(category2);
 
-        // Soft delete one category
-        categoryRepository.softDeleteById(savedCategory1.getId());
+        // Soft delete one category using @SQLDelete annotation
+        categoryRepository.deleteById(savedCategory1.getId());
 
         // Act
         List<Category> allCategories = categoryRepository.findAll();

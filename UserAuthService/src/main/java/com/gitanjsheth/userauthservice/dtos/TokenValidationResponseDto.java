@@ -5,16 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponseDto {
-    private String message;
-    private boolean success;
+public class TokenValidationResponseDto {
+    private boolean valid;
     private UserDto user;
-    private String token;
-    private LocalDateTime expiresAt;
+    private String message;
 } 

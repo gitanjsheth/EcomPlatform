@@ -6,6 +6,8 @@ import com.gitanjsheth.userauthservice.dtos.UserDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.time.LocalDateTime;
+
 public class ResponseUtils {
     
     public static ResponseEntity<SignUpResponseDto> createSignUpSuccessResponse(UserDto userDto) {
@@ -17,12 +19,13 @@ public class ResponseUtils {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    public static ResponseEntity<LoginResponseDto> createLoginSuccessResponse(UserDto userDto) {
+    public static ResponseEntity<LoginResponseDto> createLoginSuccessResponse(UserDto userDto, String token, LocalDateTime expiresAt) {
         LoginResponseDto response = new LoginResponseDto(
             "Login successful", 
             true, 
             userDto, 
-            null // Token implementation can be added later
+            token,
+            expiresAt
         );
         return ResponseEntity.ok(response);
     }

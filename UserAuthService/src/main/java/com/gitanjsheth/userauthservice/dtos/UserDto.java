@@ -3,7 +3,7 @@ package com.gitanjsheth.userauthservice.dtos;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -13,6 +13,6 @@ public class UserDto {
     private String username;
     private String email;
     private List<RoleDto> roles;
-    private Date createdAt;
+    private LocalDateTime createdAt;
     // Removed sensitive fields: phoneNumber, status, updatedAt, createdBy, updatedBy
 }

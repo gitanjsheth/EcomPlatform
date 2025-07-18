@@ -4,9 +4,10 @@ import com.gitanjsheth.userauthservice.dtos.RoleDto;
 import com.gitanjsheth.userauthservice.dtos.UserDto;
 import com.gitanjsheth.userauthservice.models.Role;
 import com.gitanjsheth.userauthservice.models.User;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 public class DtoUtils {
     
@@ -16,14 +17,14 @@ public class DtoUtils {
         userDto.setUsername(user.getUsername());
         userDto.setEmail(user.getEmail());
         userDto.setCreatedAt(user.getCreatedAt());
-        
+
         if (user.getRoles() != null) {
             List<RoleDto> roleDtos = user.getRoles().stream()
                     .map(DtoUtils::convertToRoleDto)
                     .collect(Collectors.toList());
             userDto.setRoles(roleDtos);
         }
-        
+
         return userDto;
     }
     

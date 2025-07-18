@@ -6,10 +6,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Getter
 @Setter
 @Entity
+@Where(clause = "deleted = false")
+@SQLDelete(sql = "UPDATE product SET deleted = true WHERE id = ?")
 public class Product extends BaseModel {
     @Column(nullable = false)
     @NotBlank(message = "Product title is required")

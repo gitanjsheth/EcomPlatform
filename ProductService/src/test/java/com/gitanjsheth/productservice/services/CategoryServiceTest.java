@@ -185,26 +185,30 @@ class CategoryServiceTest {
     }
 
     @Test
-    void softDeleteCategory_ValidId_CallsRepositorySoftDelete() throws CategoryNotFoundException {
+    void softDeleteCategory_ValidId_CallsRepositoryDeleteForSoftDelete() throws CategoryNotFoundException {
         // Arrange
-        doNothing().when(categoryRepository).softDeleteById(1L);
+        when(categoryRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(categoryRepository).deleteById(1L);
 
         // Act
         categoryService.softDeleteCategory(1L);
 
         // Assert
-        verify(categoryRepository, times(1)).softDeleteById(1L);
+        verify(categoryRepository, times(1)).existsById(1L);
+        verify(categoryRepository, times(1)).deleteById(1L); // Now uses regular deleteById for soft delete
     }
 
     @Test
-    void deleteCategory_ValidId_CallsRepositoryDelete() throws CategoryNotFoundException {
+    void deleteCategory_ValidId_CallsHardDeleteRepository() throws CategoryNotFoundException {
         // Arrange
-        doNothing().when(categoryRepository).deleteById(1L);
+        when(categoryRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(categoryRepository).hardDeleteById(1L);
 
         // Act
         categoryService.deleteCategory(1L);
 
         // Assert
-        verify(categoryRepository, times(1)).deleteById(1L);
+        verify(categoryRepository, times(1)).existsById(1L);
+        verify(categoryRepository, times(1)).hardDeleteById(1L); // Now uses hardDeleteById for permanent removal
     }
 } 

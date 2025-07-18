@@ -14,26 +14,19 @@ import java.util.List;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    // Override findById to exclude soft-deleted categories
-    @Query("SELECT c FROM Category c WHERE c.id = :id AND c.deleted = false")
-    Optional<Category> findById(@Param("id") Long categoryId);
-
-    // Override findAll to exclude soft-deleted categories
-    @Query("SELECT c FROM Category c WHERE c.deleted = false")
-    List<Category> findAll();
-
-    @Query("SELECT c FROM Category c WHERE c.title = :title AND c.deleted = false")
-    Optional<Category> findByTitle(@Param("title") String title);
-
+    // findById, findAll, and findByTitle now automatically exclude soft-deleted categories via @Where annotation
+    Optional<Category> findByTitle(String title);
+    
+    // For hard delete (actual removal from database) - bypass @SQLDelete annotation
     @Modifying
     @Transactional
-    @Query("UPDATE Category c SET c.deleted = true WHERE c.id = :id")
-    void softDeleteById(@Param("id") Long categoryId);
+    @Query(value = "DELETE FROM category WHERE id = ?1", nativeQuery = true)
+    void hardDeleteById(Long categoryId);
 
-    // Additional methods for soft delete functionality
-    @Query("SELECT c FROM Category c WHERE c.deleted = true")
+    // Additional methods for soft delete functionality - bypassing @Where annotation
+    @Query(value = "SELECT * FROM category WHERE deleted = true", nativeQuery = true)
     List<Category> findAllDeleted();
 
-    @Query("SELECT c FROM Category c WHERE c.id = :id AND c.deleted = true")
-    Optional<Category> findDeletedById(@Param("id") Long categoryId);
+    @Query(value = "SELECT * FROM category WHERE id = ?1 AND deleted = true", nativeQuery = true)
+    Optional<Category> findDeletedById(Long categoryId);
 }

@@ -10,6 +10,6 @@ public interface CategoryServiceInterface {
     List<Category> getAllCategories();
     Category createCategory(Category category);
     Category updateCategory(Long categoryId, Category category) throws CategoryNotFoundException;
-    void deleteCategory(Long categoryId);
-    void softDeleteCategory(Long categoryId);
+    void deleteCategory(Long categoryId) throws CategoryNotFoundException;
+    void softDeleteCategory(Long categoryId) throws CategoryNotFoundException;
 } 

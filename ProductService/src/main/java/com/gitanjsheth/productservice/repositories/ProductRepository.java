@@ -15,39 +15,33 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // Override findById to exclude soft-deleted products
-    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.deleted = false")
-    Optional<Product> findById(@Param("id") Long productId);
+    // findById and findAll now automatically exclude soft-deleted products via @Where annotation
 
-    // Override findAll to exclude soft-deleted products
-    @Query("SELECT p FROM Product p WHERE p.deleted = false")
-    List<Product> findAll();
+    // These queries now automatically exclude soft-deleted products via @Where annotation
+    Optional<Product> findByTitle(String title);
+    
+    List<Product> findByPriceBetween(int priceAfter, int priceBefore);
+    
+    List<Product> findByCategory(Category category);
+    
+    List<Product> findByCategory_Title(String categoryTitle);
 
-    @Query("SELECT p FROM Product p WHERE p.title = :title AND p.deleted = false")
-    Optional<Product> findByTitle(@Param("title") String title);
-
-    @Query("SELECT p FROM Product p WHERE p.price BETWEEN :priceAfter AND :priceBefore AND p.deleted = false")
-    List<Product> findByPriceBetween(@Param("priceAfter") int priceAfter, @Param("priceBefore") int priceBefore);
-
-    @Query("SELECT p FROM Product p WHERE p.category = :category AND p.deleted = false")
-    List<Product> findByCategory(@Param("category") Category category);
-
-    @Query("SELECT p FROM Product p WHERE p.category.title = :categoryTitle AND p.deleted = false")
-    List<Product> findByCategory_Title(@Param("categoryTitle") String categoryTitle);
-
+    // softDeleteById is now handled by @SQLDelete annotation - just use deleteById
+    
+    // For hard delete (actual removal from database) - bypass @SQLDelete annotation
     @Modifying
     @Transactional
-    @Query("UPDATE Product p SET p.deleted = true WHERE p.id = :id")
-    void softDeleteById(@Param("id") Long productId);
+    @Query(value = "DELETE FROM product WHERE id = ?1", nativeQuery = true)
+    void hardDeleteById(Long productId);
 
-    @Query("SELECT p FROM Product p WHERE p.id = :id")
-    Product findProductWithGivenId(@Param("id") Long productId);
+    @Query(value = "SELECT * FROM product WHERE id = ?1", nativeQuery = true)
+    Product findProductWithGivenId(Long productId);
 
-    // Additional methods for soft delete functionality
-    @Query("SELECT p FROM Product p WHERE p.deleted = true")
+    // Additional methods for soft delete functionality - bypassing @Where annotation
+    @Query(value = "SELECT * FROM product WHERE deleted = true", nativeQuery = true)
     List<Product> findAllDeleted();
 
-    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.deleted = true")
-    Optional<Product> findDeletedById(@Param("id") Long productId);
+    @Query(value = "SELECT * FROM product WHERE id = ?1 AND deleted = true", nativeQuery = true)
+    Optional<Product> findDeletedById(Long productId);
 
 }

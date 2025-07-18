@@ -58,15 +58,16 @@ class ProductRepositoryTest {
 
     @Test
     void findById_SoftDeletedProduct_ReturnsEmpty() {
-        // Arrange
-        testProduct.setDeleted(true);
-        entityManager.persistAndFlush(testProduct);
+        // Arrange - Use soft delete via @SQLDelete annotation
+        productRepository.deleteById(testProduct.getId());
+        entityManager.flush();
+        entityManager.clear(); // Clear the cache to ensure fresh load
 
         // Act
         Optional<Product> result = productRepository.findById(testProduct.getId());
 
         // Assert
-        assertFalse(result.isPresent());
+        assertFalse(result.isPresent()); // Should not be found due to @Where annotation
     }
 
     @Test
@@ -142,15 +143,15 @@ class ProductRepositoryTest {
     }
 
     @Test
-    void softDeleteById_MarksProductAsDeleted() {
-        // Act
-        productRepository.softDeleteById(testProduct.getId());
+    void deleteById_WithSQLDeleteAnnotation_MarksProductAsDeleted() {
+        // Act - deleteById now triggers soft delete via @SQLDelete annotation
+        productRepository.deleteById(testProduct.getId());
         entityManager.flush();
         entityManager.clear(); // Clear the cache to ensure fresh load
 
         // Assert
         Optional<Product> result = productRepository.findById(testProduct.getId());
-        assertFalse(result.isPresent()); // Should not be found by regular findById
+        assertFalse(result.isPresent()); // Should not be found by regular findById due to @Where annotation
 
         // But should be found by findDeletedById
         Optional<Product> deletedResult = productRepository.findDeletedById(testProduct.getId());
@@ -161,7 +162,7 @@ class ProductRepositoryTest {
     @Test
     void findAllDeleted_ReturnsOnlyDeletedProducts() {
         // Arrange
-        productRepository.softDeleteById(testProduct.getId());
+        productRepository.deleteById(testProduct.getId()); // Now uses @SQLDelete for soft delete
         entityManager.flush();
         entityManager.clear(); // Clear the cache to ensure fresh load
 
@@ -183,7 +184,7 @@ class ProductRepositoryTest {
     @Test
     void findDeletedById_ReturnsDeletedProduct() {
         // Arrange
-        productRepository.softDeleteById(testProduct.getId());
+        productRepository.deleteById(testProduct.getId()); // Now uses @SQLDelete for soft delete
         entityManager.flush();
         entityManager.clear(); // Clear the cache to ensure fresh load
 
@@ -227,13 +228,14 @@ class ProductRepositoryTest {
     }
 
     @Test
-    void deleteById_RemovesProductFromDatabase() {
+    void hardDeleteById_RemovesProductFromDatabase() {
         // Arrange
         Long productId = testProduct.getId();
 
-        // Act
-        productRepository.deleteById(productId);
+        // Act - Use hard delete to actually remove from database
+        productRepository.hardDeleteById(productId);
         entityManager.flush();
+        entityManager.clear(); // Clear the cache to ensure fresh load
 
         // Assert
         Optional<Product> result = productRepository.findById(productId);
@@ -251,7 +253,7 @@ class ProductRepositoryTest {
         assertNotNull(activeResult);
 
         // Arrange - Test with deleted product
-        productRepository.softDeleteById(testProduct.getId());
+        productRepository.deleteById(testProduct.getId()); // Now uses @SQLDelete for soft delete
         entityManager.flush();
 
         // Act

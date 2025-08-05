@@ -44,4 +44,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = "SELECT * FROM product WHERE id = ?1 AND deleted = true", nativeQuery = true)
     Optional<Product> findDeletedById(Long productId);
 
+    // Inventory management queries
+    List<Product> findByIsOutOfStockTrue();
+    
+    @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.lowStockThreshold AND p.isActive = true")
+    List<Product> findLowStockProducts();
+    
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND (p.isOutOfStock = false OR p.allowBackorder = true)")
+    List<Product> findAvailableProducts();
+    
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.showWhenOutOfStock = true")
+    List<Product> findDisplayableProducts();
+
 }

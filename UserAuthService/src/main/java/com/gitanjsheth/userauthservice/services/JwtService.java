@@ -4,12 +4,13 @@ import com.gitanjsheth.userauthservice.models.Role;
 import com.gitanjsheth.userauthservice.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -30,8 +31,9 @@ public class JwtService {
     @Value("${app.jwt.remember-me-expiration-days:90}")
     private int rememberMeExpirationDays;
     
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
     
     public String generateToken(User user, boolean rememberMe) {
@@ -50,16 +52,16 @@ public class JwtService {
             .claim("roles", roles)
             .setIssuedAt(new Date())
             .setExpiration(new Date(expirationTime))
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+            .signWith(getSigningKey())
             .compact();
     }
     
     public Claims extractClaims(String token) {
         return Jwts.parser()
-            .setSigningKey(getSigningKey())
+            .verifyWith(getSigningKey())
             .build()
-            .parseClaimsJws(token)
-            .getBody();
+            .parseSignedClaims(token)
+            .getPayload();
     }
     
     public boolean isTokenValid(String token) {

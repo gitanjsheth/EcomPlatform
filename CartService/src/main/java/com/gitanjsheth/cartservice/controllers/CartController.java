@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/cart")
+@RequestMapping("/api/carts")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080", "http://localhost:8081"})
 @Slf4j
 public class CartController {
@@ -32,7 +32,11 @@ public class CartController {
     }
     
     @GetMapping("/{cartId}")
-    public ResponseEntity<CartDto> getCartById(@PathVariable String cartId) {
+    public ResponseEntity<CartDto> getCartById(@PathVariable String cartId, HttpServletRequest request) {
+        // Internal endpoint: require service token
+        if (!isAuthorizedServiceRequest(request)) {
+            return ResponseEntity.status(403).build();
+        }
         CartDto cart = cartService.getCartById(cartId);
         return ResponseEntity.ok(cart);
     }
@@ -94,6 +98,16 @@ public class CartController {
         CartDto cart = cartService.mergeGuestCartWithUserCart(sessionId, userId);
         return ResponseEntity.ok(cart);
     }
+
+    // Internal: mark cart as checked out
+    @PostMapping("/{cartId}/checkout")
+    public ResponseEntity<Void> checkout(@PathVariable String cartId, HttpServletRequest request) {
+        if (!isAuthorizedServiceRequest(request)) {
+            return ResponseEntity.status(403).build();
+        }
+        cartService.markCartAsCheckedOut(cartId);
+        return ResponseEntity.ok().build();
+    }
     
     @GetMapping("/count")
     public ResponseEntity<Integer> getCartItemCount(HttpServletRequest request) {
@@ -123,7 +137,12 @@ public class CartController {
     // Helper methods
     
     private Long extractUserId(HttpServletRequest request) {
-        // This would be populated by JWT authentication filter
+        // Prefer SecurityContext; fall back to request attribute if present
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getDetails() instanceof Long) {
+            return (Long) auth.getDetails();
+        }
         Object userIdAttr = request.getAttribute("userId");
         return userIdAttr != null ? Long.valueOf(userIdAttr.toString()) : null;
     }
@@ -135,5 +154,21 @@ public class CartController {
             sessionId = request.getSession().getId();
         }
         return sessionId;
+    }
+
+    private boolean isAuthorizedServiceRequest(HttpServletRequest request) {
+        String token = request.getHeader("X-Service-Token");
+        String configuredServiceToken = System.getProperty("app.service.token");
+        if (token != null && !token.isEmpty()) {
+            if (configuredServiceToken != null && !configuredServiceToken.isEmpty()) {
+                return configuredServiceToken.equals(token);
+            }
+            String envToken = System.getenv("INTERNAL_SERVICE_TOKEN");
+            if (envToken != null && !envToken.isEmpty()) {
+                return envToken.equals(token);
+            }
+            return "internal-service-secret-2024".equals(token);
+        }
+        return false;
     }
 }

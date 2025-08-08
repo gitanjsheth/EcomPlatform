@@ -25,7 +25,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/notifications/public/**").permitAll()
-                        .requestMatchers("/api/notifications/health").permitAll()
+                        .requestMatchers("/api/notifications/health", "/actuator/**").permitAll()
+                        // Allow internal service-triggered email notifications via a dedicated endpoint (secured by token at controller layer if added)
+                        .requestMatchers("/api/notifications/internal/**").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
                         .anyRequest().authenticated()
                 )

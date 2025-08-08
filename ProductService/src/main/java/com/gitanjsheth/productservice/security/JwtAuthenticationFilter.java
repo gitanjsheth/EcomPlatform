@@ -28,18 +28,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                   HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         
-        System.out.println("🚀 JWT Filter executing for: " + request.getRequestURI());
+        logger.debug("JWT Filter executing for: " + request.getRequestURI());
         
         String authHeader = request.getHeader("Authorization");
         
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            System.out.println("🔑 JWT token found, validating...");
+            logger.debug("JWT token found, validating...");
             
             UserPrincipal userPrincipal = jwtValidationService.validateTokenAndGetUser(token);
             
             if (userPrincipal != null) {
-                System.out.println("✅ JWT token valid for user: " + userPrincipal.getUsername());
+                logger.debug("JWT token valid for user: " + userPrincipal.getUsername());
                 // Convert roles to Spring Security authorities
                 List<SimpleGrantedAuthority> authorities = userPrincipal.getRoles().stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
@@ -56,10 +56,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Set authentication in security context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
-                System.out.println("❌ JWT token validation failed");
+                logger.warn("JWT token validation failed");
             }
         } else {
-            System.out.println("ℹ️ No JWT token in request");
+            logger.debug("No JWT token in request");
         }
         
         filterChain.doFilter(request, response);
@@ -70,32 +70,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
         
-        System.out.println("🔍 JWT Filter Check - Path: " + path + ", Method: " + method);
+        logger.debug("JWT Filter Check - Path: " + path + ", Method: " + method);
         
         // Skip JWT validation for public endpoints
         if (path.startsWith("/actuator/")) {
-            System.out.println("✅ Skipping JWT filter for actuator endpoint");
+            logger.debug("Skipping JWT filter for actuator endpoint");
             return true;
         }
         
         // Allow public GET requests to basic product endpoints
         if ("GET".equals(method)) {
             if (path.equals("/products") || path.equals("/products/")) {
-                System.out.println("✅ Skipping JWT filter for public products endpoint");
+                logger.debug("Skipping JWT filter for public products endpoint");
                 return true;
             }
             if (path.matches("/products/\\d+")) {
-                System.out.println("✅ Skipping JWT filter for public product detail endpoint");
+                logger.debug("Skipping JWT filter for public product detail endpoint");
                 return true;
             }
             if (path.startsWith("/categories")) {
-                System.out.println("✅ Skipping JWT filter for categories endpoint");
+                logger.debug("Skipping JWT filter for categories endpoint");
                 return true;
             }
         }
         
         // All other requests need JWT validation
-        System.out.println("❌ JWT filter will run for this endpoint");
+        logger.debug("JWT filter will run for this endpoint");
         return false;
     }
 } 

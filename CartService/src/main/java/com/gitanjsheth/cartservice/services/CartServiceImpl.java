@@ -280,6 +280,16 @@ public class CartServiceImpl implements CartService {
         
         log.info("Expired cart: {}", cartId);
     }
+
+    @Override
+    public void markCartAsCheckedOut(String cartId) {
+        Cart cart = cartRepository.findById(cartId)
+            .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        cart.markAsCheckedOut();
+        cartRepository.save(cart);
+        cartCacheRepository.invalidateCart(cart);
+        log.info("Marked cart {} as CHECKED_OUT", cartId);
+    }
     
     @Override
     @Scheduled(fixedRateString = "${app.cart.cleanup-interval-hours:6}000000") // 6 hours in milliseconds

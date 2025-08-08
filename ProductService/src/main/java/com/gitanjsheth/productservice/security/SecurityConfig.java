@@ -40,8 +40,8 @@ public class SecurityConfig {
                 // Product availability - public read access
                 .requestMatchers(HttpMethod.GET, "/products/{id:[0-9]+}/availability").permitAll()
                 
-                // Internal service endpoints - require service authentication
-                .requestMatchers(HttpMethod.POST, "/products/{id:[0-9]+}/inventory/**").permitAll() // Will be secured by service token
+                // Internal service endpoints - validated via service token in controller
+                .requestMatchers(HttpMethod.POST, "/products/{id:[0-9]+}/inventory/**").permitAll()
                 
                 // User-specific endpoints - require authentication (any role)
                 .requestMatchers("/products/wishlist", "/products/wishlist/**", "/products/user/**", "/products/me").authenticated()

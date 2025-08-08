@@ -51,9 +51,11 @@ public class ProductController {
     @PostMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) throws CategoryNotFoundException {
-        // Log who is creating the product
         UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        System.out.println("Product being created by: " + (currentUser != null ? currentUser.getUsername() : "anonymous"));
+        if (currentUser != null) {
+            org.slf4j.LoggerFactory.getLogger(ProductController.class)
+                    .info("Product being created by: {}", currentUser.getUsername());
+        }
         
         Product createdProduct = productService.createProduct(product);
         return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
@@ -64,9 +66,11 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Product> updateProduct(@PathVariable("id") Long productId, @Valid @RequestBody Product product) 
             throws ProductNotFoundException, CategoryNotFoundException {
-        // Log who is updating the product
         UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        System.out.println("Product " + productId + " being updated by: " + (currentUser != null ? currentUser.getUsername() : "anonymous"));
+        if (currentUser != null) {
+            org.slf4j.LoggerFactory.getLogger(ProductController.class)
+                    .info("Product {} being updated by: {}", productId, currentUser.getUsername());
+        }
         
         Product updatedProduct = productService.updateProduct(productId, product);
         return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
@@ -76,9 +80,11 @@ public class ProductController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long productId) throws ProductNotFoundException {
-        // Log who is deleting the product
         UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        System.out.println("Product " + productId + " being HARD DELETED by: " + (currentUser != null ? currentUser.getUsername() : "anonymous"));
+        if (currentUser != null) {
+            org.slf4j.LoggerFactory.getLogger(ProductController.class)
+                    .info("Product {} being HARD DELETED by: {}", productId, currentUser.getUsername());
+        }
         
         productService.deleteProduct(productId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -88,9 +94,11 @@ public class ProductController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> softDeleteProduct(@PathVariable("id") Long productId) throws ProductNotFoundException {
-        // Log who is soft deleting the product
         UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        System.out.println("Product " + productId + " being SOFT DELETED by: " + (currentUser != null ? currentUser.getUsername() : "anonymous"));
+        if (currentUser != null) {
+            org.slf4j.LoggerFactory.getLogger(ProductController.class)
+                    .info("Product {} being SOFT DELETED by: {}", productId, currentUser.getUsername());
+        }
         
         productService.softDeleteById(productId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

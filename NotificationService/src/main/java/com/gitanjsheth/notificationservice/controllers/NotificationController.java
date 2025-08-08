@@ -86,4 +86,34 @@ public class NotificationController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Notification Service is running");
     }
+
+    // Internal endpoint to create notifications via service token
+    @PostMapping("/internal/send")
+    public ResponseEntity<String> internalSend(@RequestHeader(value = "X-Service-Token", required = false) String token,
+                                               @RequestBody CreateNotificationDto dto) {
+        if (!isAuthorizedServiceToken(token)) {
+            return ResponseEntity.status(403).build();
+        }
+        try {
+            NotificationDto notification = notificationService.createNotification(dto);
+            return ResponseEntity.ok(notification != null ? "OK" : "FAILED");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private boolean isAuthorizedServiceToken(String token) {
+        String configured = System.getProperty("app.service.token");
+        if (token != null && !token.isEmpty()) {
+            if (configured != null && !configured.isEmpty()) {
+                return configured.equals(token);
+            }
+            String envToken = System.getenv("INTERNAL_SERVICE_TOKEN");
+            if (envToken != null && !envToken.isEmpty()) {
+                return envToken.equals(token);
+            }
+            return "internal-service-secret-2024".equals(token);
+        }
+        return false;
+    }
 } 

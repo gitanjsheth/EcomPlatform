@@ -4,17 +4,20 @@ import com.gitanjsheth.productservice.dtos.ProductAvailabilityDto;
 import com.gitanjsheth.productservice.services.InventoryService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/products")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080", "http://localhost:8082"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082"})
 @Slf4j
 public class InventoryController {
     
     private final InventoryService inventoryService;
+    @Value("${app.service.token:}")
+    private String configuredServiceToken;
     
     public InventoryController(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
@@ -91,6 +94,41 @@ public class InventoryController {
         }
     }
     
+    // Validate multiple cart items (internal service endpoint)
+    @PostMapping("/validate-cart")
+    public ResponseEntity<java.util.Map<String, Object>> validateCart(@RequestBody java.util.Map<String, Object> body,
+                                                                      HttpServletRequest httpRequest) {
+        if (!isValidServiceRequest(httpRequest)) {
+            log.warn("Unauthorized cart validation request from {}", httpRequest.getRemoteAddr());
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            java.util.List<java.util.Map<String, Object>> items = (java.util.List<java.util.Map<String, Object>>) body.get("items");
+            if (items == null) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("valid", false, "errors", java.util.List.of("Missing items")));
+            }
+
+            java.util.List<com.gitanjsheth.productservice.services.InventoryService.CartItemValidation> validations = new java.util.ArrayList<>();
+            for (java.util.Map<String, Object> item : items) {
+                Long pId = ((Number) item.get("productId")).longValue();
+                Integer qty = ((Number) item.get("quantity")).intValue();
+                validations.add(new com.gitanjsheth.productservice.services.InventoryService.CartItemValidation(pId, qty));
+            }
+
+            boolean valid = inventoryService.validateCartItems(validations);
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("valid", valid);
+            if (!valid) {
+                result.put("errors", java.util.List.of("One or more items are unavailable"));
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error validating cart items: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
     /**
      * Validate that request is coming from authorized internal services
      */
@@ -113,13 +151,14 @@ public class InventoryController {
     }
     
     private boolean isValidServiceToken(String token) {
-        // In production, this would validate against a shared secret or service registry
-        String expectedToken = System.getenv("INTERNAL_SERVICE_TOKEN");
-        if (expectedToken != null) {
-            return expectedToken.equals(token);
+        // Prefer application property; fallback to env; finally to default constant for dev
+        if (configuredServiceToken != null && !configuredServiceToken.isEmpty()) {
+            return configuredServiceToken.equals(token);
         }
-        
-        // Fallback for development - simple shared secret
+        String envToken = System.getenv("INTERNAL_SERVICE_TOKEN");
+        if (envToken != null && !envToken.isEmpty()) {
+            return envToken.equals(token);
+        }
         return "internal-service-secret-2024".equals(token);
     }
     

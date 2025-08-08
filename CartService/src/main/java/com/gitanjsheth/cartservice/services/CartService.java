@@ -21,6 +21,7 @@ public interface CartService {
     void expireCart(String cartId);
     void cleanupExpiredCarts();
     void validateCartInventory(String cartId);
+    void markCartAsCheckedOut(String cartId);
     
     // Utility operations
     int getCartItemCount(Long userId, String sessionId);

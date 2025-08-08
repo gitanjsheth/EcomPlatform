@@ -139,9 +139,9 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <url>jdbc:mysql://localhost:3306/userauthproj</url>
-                    <user>gitanjsheth</user>
-                    <password>Vgsheth123</password>
+                    <url>${env.FLYWAY_URL}</url>
+                    <user>${env.FLYWAY_USER}</user>
+                    <password>${env.FLYWAY_PASSWORD}</password>
                 </configuration>
             </plugin>
         </plugins>

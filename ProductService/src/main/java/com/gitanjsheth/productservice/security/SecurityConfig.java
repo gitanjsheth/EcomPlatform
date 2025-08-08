@@ -29,6 +29,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints - no authentication required
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/search", "/search/**").permitAll()
                 
                 // Allow GET requests to all product listing endpoints
                 .requestMatchers(HttpMethod.GET, "/products").permitAll()
@@ -50,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/products/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")

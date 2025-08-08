@@ -17,10 +17,12 @@ public class SelfProductService implements ProductServiceInterface{
 
     private ProductRepository productRepository;
     private CategoryRepository categoryRepository;
+    private final SearchService searchService;
 
-    public SelfProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+    public SelfProductService(ProductRepository productRepository, CategoryRepository categoryRepository, SearchService searchService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.searchService = searchService;
     }
 
     @Override
@@ -51,7 +53,9 @@ public class SelfProductService implements ProductServiceInterface{
         Category resolvedCategory = getOrCreateCategory(category);
         product.setCategory(resolvedCategory);
 
-        return productRepository.save(product);
+        Product saved = productRepository.save(product);
+        searchService.indexProduct(saved);
+        return saved;
     }
 
     @Override
@@ -89,7 +93,9 @@ public class SelfProductService implements ProductServiceInterface{
             existingProduct.setImageURL(product.getImageURL());
         }
 
-        return productRepository.save(existingProduct);
+        Product saved = productRepository.save(existingProduct);
+        searchService.indexProduct(saved);
+        return saved;
     }
 
     @Override
@@ -106,6 +112,7 @@ public class SelfProductService implements ProductServiceInterface{
         
         // Use hard delete for permanent removal
         productRepository.hardDeleteById(productId);
+        searchService.deleteProductIndex(productId);
     }
 
     @Override
@@ -122,6 +129,7 @@ public class SelfProductService implements ProductServiceInterface{
         
         // deleteById now triggers soft delete via @SQLDelete annotation
         productRepository.deleteById(productId);
+        searchService.deleteProductIndex(productId);
     }
     
     /**

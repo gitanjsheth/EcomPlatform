@@ -1,0 +1,16 @@
+package com.gitanjsheth.notificationservice.models;
+
+public enum NotificationType {
+    USER_REGISTRATION,
+    USER_LOGIN,
+    PASSWORD_RESET,
+    ORDER_CONFIRMATION,
+    ORDER_STATUS_UPDATE,
+    PAYMENT_CONFIRMATION,
+    PAYMENT_FAILED,
+    SHIPPING_UPDATE,
+    DELIVERY_CONFIRMATION,
+    CART_ABANDONMENT,
+    PRODUCT_BACK_IN_STOCK,
+    PROMOTIONAL_EMAIL
+} 

@@ -13,6 +13,7 @@ import com.gitanjsheth.cartservice.repositories.CartCacheRepository;
 import com.gitanjsheth.cartservice.repositories.CartRepository;
 import com.gitanjsheth.cartservice.utils.CartMapper;
 import lombok.extern.slf4j.Slf4j;
+import com.gitanjsheth.cartservice.messaging.CartEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartCacheRepository cartCacheRepository;
     private final ProductValidationService productValidationService;
+    private final CartEventPublisher cartEventPublisher;
     private final CartMapper cartMapper;
     
     @Value("${app.cart.max-items-per-cart:100}")
@@ -40,11 +42,13 @@ public class CartServiceImpl implements CartService {
     public CartServiceImpl(CartRepository cartRepository,
                           CartCacheRepository cartCacheRepository,
                           ProductValidationService productValidationService,
-                          CartMapper cartMapper) {
+                          CartMapper cartMapper,
+                          CartEventPublisher cartEventPublisher) {
         this.cartRepository = cartRepository;
         this.cartCacheRepository = cartCacheRepository;
         this.productValidationService = productValidationService;
         this.cartMapper = cartMapper;
+        this.cartEventPublisher = cartEventPublisher;
     }
     
     @Override
@@ -135,6 +139,10 @@ public class CartServiceImpl implements CartService {
         
         log.info("Added product {} (quantity: {}) to cart for user/session: {}/{}", 
             addToCartDto.getProductId(), addToCartDto.getQuantity(), userId, sessionId);
+
+        // Publish cart event (ADD)
+        cartEventPublisher.publishCartEvent(
+            "ADD_ITEM", userId, sessionId, addToCartDto.getProductId(), addToCartDto.getQuantity());
         
         return cartMapper.toDto(cart);
     }
@@ -169,6 +177,10 @@ public class CartServiceImpl implements CartService {
         
         log.info("Updated product {} quantity to {} in cart for user/session: {}/{}", 
             productId, updateDto.getQuantity(), userId, sessionId);
+
+        // Publish cart event (UPDATE or REMOVE)
+        String eventType = updateDto.getQuantity() == 0 ? "REMOVE_ITEM" : "UPDATE_ITEM";
+        cartEventPublisher.publishCartEvent(eventType, userId, sessionId, productId, updateDto.getQuantity());
         
         return cartMapper.toDto(cart);
     }
@@ -190,6 +202,9 @@ public class CartServiceImpl implements CartService {
         cartCacheRepository.cacheCart(cart);
         
         log.info("Removed product {} from cart for user/session: {}/{}", productId, userId, sessionId);
+
+        // Publish cart event (REMOVE)
+        cartEventPublisher.publishCartEvent("REMOVE_ITEM", userId, sessionId, productId, 0);
         
         return cartMapper.toDto(cart);
     }
@@ -209,6 +224,9 @@ public class CartServiceImpl implements CartService {
         cartCacheRepository.cacheCart(cart);
         
         log.info("Cleared cart for user/session: {}/{}", userId, sessionId);
+
+        // Publish cart event (CLEAR)
+        cartEventPublisher.publishCartEvent("CLEAR_CART", userId, sessionId, null, 0);
         
         return cartMapper.toDto(cart);
     }

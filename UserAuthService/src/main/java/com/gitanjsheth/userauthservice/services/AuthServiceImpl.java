@@ -13,6 +13,7 @@ import com.gitanjsheth.userauthservice.repositories.RoleRepository;
 import com.gitanjsheth.userauthservice.repositories.UserRepository;
 import com.gitanjsheth.userauthservice.utils.DtoUtils;
 import org.springframework.beans.factory.annotation.Value;
+import com.gitanjsheth.userauthservice.messaging.UserEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DataInitializer dataInitializer;
+    private final UserEventPublisher userEventPublisher;
     
     @Value("${app.security.max-login-attempts:5}")
     private int maxLoginAttempts;
@@ -35,11 +37,13 @@ public class AuthServiceImpl implements AuthService {
     private int accountLockDurationMinutes;
 
     public AuthServiceImpl(UserRepository userRepository, RoleRepository roleRepository, 
-                          PasswordEncoder passwordEncoder, DataInitializer dataInitializer) {
+                          PasswordEncoder passwordEncoder, DataInitializer dataInitializer,
+                          UserEventPublisher userEventPublisher) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.dataInitializer = dataInitializer;
+        this.userEventPublisher = userEventPublisher;
     }
 
     @Override
@@ -69,6 +73,9 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(Collections.singletonList(getDefaultRole()));
         
         User savedUser = userRepository.save(user);
+        try {
+            userEventPublisher.publishUserRegistered(savedUser.getId(), savedUser.getEmail());
+        } catch (Exception ignored) { }
         return DtoUtils.convertToUserDto(savedUser);
     }
 
@@ -98,6 +105,9 @@ public class AuthServiceImpl implements AuthService {
         
         // Successful login - reset login attempts and update last login
         updateLastLogin(user.getId());
+        try {
+            userEventPublisher.publishUserLogin(user.getId(), user.getEmail());
+        } catch (Exception ignored) { }
         
         return DtoUtils.convertToUserDto(user);
     }

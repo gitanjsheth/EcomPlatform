@@ -7,6 +7,7 @@ import com.gitanjsheth.userauthservice.utils.ResponseUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/auth")
@@ -60,8 +61,8 @@ public class AuthController {
     }
     
     @PostMapping("/admin/users/{userId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> banUser(@PathVariable Long userId) {
-        // TODO: Add admin role check here once security is fully implemented
         tokenService.banUserAndInvalidateTokens(userId);
         return ResponseEntity.ok("User banned and all sessions invalidated");
     }

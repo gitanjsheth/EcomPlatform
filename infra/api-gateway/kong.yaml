@@ -1,0 +1,55 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: user-auth-service
+    url: http://user-auth-service:8080
+    routes:
+      - name: user-auth-route
+        paths: ["/auth", "/profile"]
+        strip_path: false
+
+  - name: product-service
+    url: http://product-service:8081
+    routes:
+      - name: product-route
+        paths: ["/products", "/search", "/categories", "/inventory"]
+        strip_path: false
+
+  - name: cart-service
+    url: http://cart-service:8082
+    routes:
+      - name: cart-route
+        paths: ["/api/carts"]
+        strip_path: false
+
+  - name: order-service
+    url: http://order-service:8083
+    routes:
+      - name: order-route
+        paths: ["/api/orders", "/api/order-tracking"]
+        strip_path: false
+
+  - name: payment-service
+    url: http://payment-service:8084
+    routes:
+      - name: payment-route
+        paths: ["/api/payments"]
+        strip_path: false
+
+  - name: notification-service
+    url: http://notification-service:8085
+    routes:
+      - name: notification-route
+        paths: ["/api/notifications", "/api/templates"]
+        strip_path: false
+
+plugins:
+  # Example global rate-limiting (adjust as needed)
+  - name: rate-limiting
+    config:
+      minute: 600
+      policy: local
+
+
+

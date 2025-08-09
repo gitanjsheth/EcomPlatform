@@ -33,16 +33,9 @@ public class ProductController {
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
 
-    //localhost:8081/products/ (with trailing slash)
-    @GetMapping("/")
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK);
-    }
-
-    //localhost:8081/products (without trailing slash)
+    //localhost:8081/products
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProductsNoSlash() {
+    public ResponseEntity<List<Product>> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
@@ -103,93 +96,4 @@ public class ProductController {
         productService.softDeleteById(productId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    
-    // Test endpoint to check authentication
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser() {
-        UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        if (currentUser != null) {
-            return ResponseEntity.ok(currentUser);
-        } else {
-            return ResponseEntity.ok("Not authenticated");
-        }
-    }
-
-    // User-specific endpoints - accessible by any authenticated user (USER or ADMIN)
-    @GetMapping("/wishlist")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getUserWishlist() {
-        UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-        }
-        
-        // In a real application, this would fetch from a wishlist service/repository
-        // For demo purposes, we'll return a mock response
-        return ResponseEntity.ok(java.util.Map.of(
-            "userId", currentUser.getUserId(),
-            "username", currentUser.getUsername(),
-            "wishlistItems", java.util.List.of(
-                java.util.Map.of("productId", 1, "productName", "Sample Product 1", "addedDate", "2024-01-15"),
-                java.util.Map.of("productId", 3, "productName", "Sample Product 3", "addedDate", "2024-01-20")
-            ),
-            "message", "Wishlist retrieved successfully for user: " + currentUser.getUsername()
-        ));
-    }
-    
-    @PostMapping("/wishlist/{productId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> addToWishlist(@PathVariable("productId") Long productId) {
-        UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-        }
-        
-        // In a real application, this would add to wishlist service/repository
-        // For demo purposes, we'll return a mock response
-        return ResponseEntity.ok(java.util.Map.of(
-            "message", "Product " + productId + " added to wishlist for user: " + currentUser.getUsername(),
-            "userId", currentUser.getUserId(),
-            "productId", productId,
-            "timestamp", java.time.LocalDateTime.now().toString()
-        ));
-    }
-    
-    @DeleteMapping("/wishlist/{productId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> removeFromWishlist(@PathVariable("productId") Long productId) {
-        UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-        }
-        
-        // In a real application, this would remove from wishlist service/repository
-        // For demo purposes, we'll return a mock response
-        return ResponseEntity.ok(java.util.Map.of(
-            "message", "Product " + productId + " removed from wishlist for user: " + currentUser.getUsername(),
-            "userId", currentUser.getUserId(),
-            "productId", productId,
-            "timestamp", java.time.LocalDateTime.now().toString()
-        ));
-    }
-
-    // User profile endpoint - accessible by any authenticated user
-    @GetMapping("/user/profile")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getUserProfile() {
-        UserPrincipal currentUser = SecurityUtils.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-        }
-        
-        return ResponseEntity.ok(java.util.Map.of(
-            "userId", currentUser.getUserId(),
-            "username", currentUser.getUsername(),
-            "email", currentUser.getEmail(),
-            "roles", currentUser.getRoles(),
-            "accessLevel", currentUser.hasRole("ADMIN") ? "Administrator" : "Regular User",
-            "message", "Profile retrieved successfully"
-        ));
-    }
-
 }

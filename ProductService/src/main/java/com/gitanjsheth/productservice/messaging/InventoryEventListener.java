@@ -36,14 +36,17 @@ public class InventoryEventListener {
 
                 switch (action) {
                     case "RESERVE":
-                        // For system events we do not have userId context; reserve at product level
-                        inventoryService.reserveInventoryForCheckout(productId, quantity, 0L);
+                        // Use orderId hash to create a stable, segregated hold key when userId is unavailable
+                        Long holdKeyUserId = orderId != null ? Math.abs(orderId.hashCode()) + 0L : -1L;
+                        inventoryService.reserveInventoryForCheckout(productId, quantity, holdKeyUserId);
                         break;
                     case "RELEASE":
-                        inventoryService.releaseReservedInventory(productId, quantity, 0L);
+                        Long releaseKeyUserId = orderId != null ? Math.abs(orderId.hashCode()) + 0L : -1L;
+                        inventoryService.releaseReservedInventory(productId, quantity, releaseKeyUserId);
                         break;
                     case "CONFIRM":
-                        inventoryService.confirmInventoryUsage(productId, quantity, 0L);
+                        Long confirmKeyUserId = orderId != null ? Math.abs(orderId.hashCode()) + 0L : -1L;
+                        inventoryService.confirmInventoryUsage(productId, quantity, confirmKeyUserId);
                         break;
                     default:
                         log.warn("Unknown inventory action: {}", action);

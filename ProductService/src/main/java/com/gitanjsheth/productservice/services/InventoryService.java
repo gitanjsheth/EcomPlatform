@@ -64,7 +64,7 @@ public class InventoryService {
             product.setReservedQuantity(product.getReservedQuantity() + quantity);
             saveProductWithStockUpdate(product);
             
-            // Create temporary hold
+            // Create temporary hold keyed by order or user
             createInventoryHold(productId, userId, quantity);
             
             log.info("Reserved {} units of product {} for user {}", quantity, productId, userId);
@@ -226,7 +226,7 @@ public class InventoryService {
      * Generate unique hold key
      */
     private String generateHoldKey(Long productId, Long userId) {
-        return productId + ":" + userId;
+        return productId + ":" + (userId != null ? userId : -1L);
     }
     
     /**

@@ -69,6 +69,39 @@ public class FakeStoreProductService implements ProductServiceInterface{
     @Override
     public void softDeleteById(Long productId) {}
 
+    @Override
+    public List<Product> getProductsByCategory(Long categoryId) throws CategoryNotFoundException {
+        // For FakeStore, we'll get all products and filter by category
+        List<Product> allProducts = getAllProducts();
+        return allProducts.stream()
+                .filter(product -> product.getCategory() != null && 
+                        product.getCategory().getId() != null && 
+                        product.getCategory().getId().equals(categoryId))
+                .toList();
+    }
+
+    @Override
+    public List<Product> getProductsByCategoryTitle(String categoryTitle) {
+        // For FakeStore, we'll get all products and filter by category title
+        List<Product> allProducts = getAllProducts();
+        return allProducts.stream()
+                .filter(product -> product.getCategory() != null && 
+                        product.getCategory().getTitle() != null && 
+                        product.getCategory().getTitle().equalsIgnoreCase(categoryTitle))
+                .toList();
+    }
+
+    @Override
+    public List<Product> getProductsByCategoryId(Long categoryId) {
+        // For FakeStore, we'll get all products and filter by category ID
+        List<Product> allProducts = getAllProducts();
+        return allProducts.stream()
+                .filter(product -> product.getCategory() != null && 
+                        product.getCategory().getId() != null && 
+                        product.getCategory().getId().equals(categoryId))
+                .toList();
+    }
+
     private static Product convertFakeStoreProductDtoToProduct(FakeStoreProductDto fakeStoreProductDto) {
         if (fakeStoreProductDto == null) {
             return null;

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,98 @@ public class OrderController {
     
     @Value("${app.service.token:}")
     private String configuredServiceToken;
+    
+    // ============================================================================
+    // PUBLIC USER-FACING ENDPOINTS (User Authentication Required)
+    // ============================================================================
+    
+    /**
+     * Get current user's orders (public endpoint)
+     */
+    @GetMapping("/my-orders")
+    public ResponseEntity<Page<OrderDto>> getMyOrders(
+            Pageable pageable,
+            HttpServletRequest request) {
+        
+        Long userId = extractUserId(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        Page<OrderDto> orders = orderService.getUserOrders(userId, pageable);
+        return ResponseEntity.ok(orders);
+    }
+    
+    /**
+     * Get current user's orders by status (public endpoint)
+     */
+    @GetMapping("/my-orders/status/{status}")
+    public ResponseEntity<Page<OrderDto>> getMyOrdersByStatus(
+            @PathVariable OrderStatus status,
+            Pageable pageable,
+            HttpServletRequest request) {
+        
+        Long userId = extractUserId(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        Page<OrderDto> orders = orderService.getUserOrdersByStatus(userId, status, pageable);
+        return ResponseEntity.ok(orders);
+    }
+    
+    /**
+     * Get current user's order by ID (public endpoint)
+     */
+    @GetMapping("/my-orders/{orderId}")
+    public ResponseEntity<OrderDto> getMyOrderById(
+            @PathVariable Long orderId,
+            HttpServletRequest request) {
+        
+        Long userId = extractUserId(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        OrderDto order = orderService.getOrderById(orderId, userId);
+        return ResponseEntity.ok(order);
+    }
+    
+    /**
+     * Get current user's order by order number (public endpoint)
+     */
+    @GetMapping("/my-orders/number/{orderNumber}")
+    public ResponseEntity<OrderDto> getMyOrderByOrderNumber(
+            @PathVariable String orderNumber,
+            HttpServletRequest request) {
+        
+        Long userId = extractUserId(request);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        OrderDto order = orderService.getOrderByOrderNumber(orderNumber, userId);
+        return ResponseEntity.ok(order);
+    }
+    
+    /**
+     * Cancel current user's order (public endpoint)
+     */
+    @PostMapping("/my-orders/{orderId}/cancel")
+    public ResponseEntity<OrderDto> cancelMyOrder(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> request,
+            HttpServletRequest httpRequest) {
+        
+        Long userId = extractUserId(httpRequest);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        String reason = request.getOrDefault("reason", "User requested cancellation");
+        OrderDto order = orderService.cancelOrder(orderId, userId, reason);
+        return ResponseEntity.ok(order);
+    }
     
     // ============================================================================
     // INTERNAL SERVICE ENDPOINTS (Service-to-Service Communication)
@@ -373,5 +466,21 @@ public class OrderController {
         }
         
         return request.getRemoteAddr();
+    }
+    
+    /**
+     * Extract user ID from authenticated request
+     */
+    private Long extractUserId(HttpServletRequest request) {
+        // Try to get from SecurityContext first
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            return (Long) auth.getPrincipal();
+        }
+        
+        // Fallback to request attribute
+        Object userIdAttr = request.getAttribute("userId");
+        return userIdAttr != null ? Long.valueOf(userIdAttr.toString()) : null;
     }
 }

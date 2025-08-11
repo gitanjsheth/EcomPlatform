@@ -13,4 +13,9 @@ public interface ProductServiceInterface {
     Product updateProduct(Long productId, Product product) throws ProductNotFoundException, CategoryNotFoundException;
     void deleteProduct(Long productId) throws ProductNotFoundException;
     void softDeleteById(Long productId) throws ProductNotFoundException;
+    
+    // Product browsing by category
+    List<Product> getProductsByCategory(Long categoryId) throws CategoryNotFoundException;
+    List<Product> getProductsByCategoryTitle(String categoryTitle);
+    List<Product> getProductsByCategoryId(Long categoryId);
 }

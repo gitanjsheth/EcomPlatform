@@ -40,6 +40,24 @@ public class ProductController {
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
+    //localhost:8081/products/category/{categoryId}
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable("categoryId") Long categoryId) {
+        try {
+            List<Product> products = productService.getProductsByCategory(categoryId);
+            return new ResponseEntity<>(products, HttpStatus.OK);
+        } catch (CategoryNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    //localhost:8081/products/category/title/{categoryTitle}
+    @GetMapping("/category/title/{categoryTitle}")
+    public ResponseEntity<List<Product>> getProductsByCategoryTitle(@PathVariable("categoryTitle") String categoryTitle) {
+        List<Product> products = productService.getProductsByCategoryTitle(categoryTitle);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
     //localhost:8081/products/
     @PostMapping("/")
     @PreAuthorize("hasRole('ADMIN')")

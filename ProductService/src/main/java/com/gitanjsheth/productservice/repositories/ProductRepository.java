@@ -25,6 +25,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategory(Category category);
     
     List<Product> findByCategory_Title(String categoryTitle);
+    
+    List<Product> findByCategory_Id(Long categoryId);
 
     // softDeleteById is now handled by @SQLDelete annotation - just use deleteById
     

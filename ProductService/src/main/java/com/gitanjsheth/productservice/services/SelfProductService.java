@@ -132,6 +132,36 @@ public class SelfProductService implements ProductServiceInterface{
         searchService.deleteProductIndex(productId);
     }
     
+    @Override
+    public List<Product> getProductsByCategory(Long categoryId) throws CategoryNotFoundException {
+        if (categoryId == null || categoryId <= 0) {
+            throw new IllegalArgumentException("Category ID must be a positive number");
+        }
+        
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + categoryId, categoryId));
+        
+        return productRepository.findByCategory(category);
+    }
+    
+    @Override
+    public List<Product> getProductsByCategoryTitle(String categoryTitle) {
+        if (categoryTitle == null || categoryTitle.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category title cannot be null or empty");
+        }
+        
+        return productRepository.findByCategory_Title(categoryTitle);
+    }
+    
+    @Override
+    public List<Product> getProductsByCategoryId(Long categoryId) {
+        if (categoryId == null || categoryId <= 0) {
+            throw new IllegalArgumentException("Category ID must be a positive number");
+        }
+        
+        return productRepository.findByCategory_Id(categoryId);
+    }
+    
     /**
      * Gets an existing category by title or creates a new one if it doesn't exist
      * Uses proper entity state management to handle concurrent scenarios

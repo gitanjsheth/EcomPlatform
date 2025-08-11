@@ -17,9 +17,11 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Lo
     // Find by user ID
     List<PaymentMethod> findByUserIdAndIsActiveTrue(Long userId);
     List<PaymentMethod> findByUserIdOrderByIsDefaultDescCreatedAtDesc(Long userId);
+    List<PaymentMethod> findByUserId(Long userId);
     
     // Find default payment method for user
     Optional<PaymentMethod> findByUserIdAndIsDefaultTrueAndIsActiveTrue(Long userId);
+    Optional<PaymentMethod> findByUserIdAndIsDefaultTrue(Long userId);
     
     // Find by gateway token
     Optional<PaymentMethod> findByGatewayToken(String gatewayToken);

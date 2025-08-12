@@ -14,13 +14,13 @@ The platform follows a microservices architecture pattern with the following com
                                 │
                 ┌───────────────┼───────────────┐
                 │               │               │
-        ┌───────▼──────┐ ┌──────▼──────┐ ┌─────▼──────┐
+        ┌───────▼──────┐ ┌──────▼──────┐ ┌──────▼─────┐
         │ User Auth    │ │  Product    │ │   Cart     │
         │   Service    │ │  Service    │ │  Service   │
         │   (MySQL)    │ │(MySQL+ES)   │ │(MongoDB)   │
         └──────────────┘ └─────────────┘ └────────────┘
                 │               │               │
-        ┌───────▼──────┐ ┌──────▼──────┐ ┌─────▼──────┐
+        ┌───────▼──────┐ ┌──────▼──────┐ ┌──────▼─────┐
         │   Order      │ │  Payment    │ │Notification│
         │ Management   │ │  Service    │ │  Service   │
         │   (MySQL)    │ │   (MySQL)   │ │   (MySQL)  │
